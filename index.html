@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI Q&A App with Voice</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 2rem 1rem;
+      background: linear-gradient(to bottom right, #e0f7fa, #f8f9fa);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    h1 {
+      color: #222;
+      margin-bottom: 1.5rem;
+      font-size: 2rem;
+      text-align: center;
+    }
+
+    textarea {
+      width: 100%;
+      max-width: 600px;
+      height: 120px;
+      padding: 12px;
+      font-size: 1rem;
+      border-radius: 12px;
+      border: 1px solid #ccc;
+      resize: none;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 1rem;
+      transition: border 0.3s ease;
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: #007bff;
+    }
+
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 2rem;
+    }
+
+    button {
+      padding: 12px 20px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.3s ease, transform 0.2s;
+    }
+
+    button:hover {
+      transform: scale(1.03);
+    }
+
+    .ask-btn {
+      background-color: #007bff;
+      color: white;
+    }
+
+    .voice-btn {
+      background-color: #28a745;
+      color: white;
+    }
+
+    #answer {
+      width: 100%;
+      max-width: 700px;
+      background: white;
+      padding: 1.5rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      font-size: 1.05rem;
+      color: #333;
+      white-space: pre-wrap;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 600px) {
+      h1 {
+        font-size: 1.5rem;
+      }
+
+      textarea {
+        height: 100px;
+      }
+
+      #answer {
+        padding: 1rem;
+        font-size: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Ask Any Question</h1>
+  <textarea id="question" placeholder="Type or speak your question..."></textarea>
+  <div class="button-group">
+    <button class="ask-btn" onclick="askQuestion()">💡 Get Answer</button>
+    <button class="voice-btn" onclick="startVoice()">🎤 Speak</button>
+  </div>
+  <div id="answer"></div>
+
+  <script>
+    const apiKey = "AIzaSyA1v5NfuqSvNkGIqirznvwUcTAqvv3dIzE"; // 🔐 Replace with your actual Gemini API key
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+    async function askQuestion() {
+      const question = document.getElementById('question').value.trim();
+      const answerDiv = document.getElementById('answer');
+
+      if (!question) {
+        alert("Please type or speak a question first.");
+        return;
+      }
+
+      answerDiv.innerHTML = "⏳ Thinking...";
+
+      try {
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: question }] }]
+          })
+        });
+
+        const data = await response.json();
+        const answer = data?.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, no answer received.";
+        answerDiv.innerHTML = `<strong>Answer:</strong><br>${answer}`;
+      } catch (error) {
+        answerDiv.innerHTML = "❌ Error: " + error.message;
+      }
+    }
+
+    function startVoice() {
+      const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+      recognition.lang = 'en-US';
+      recognition.interimResults = false;
+
+      recognition.onresult = (event) => {
+        const speech = event.results[0][0].transcript;
+        document.getElementById('question').value = speech;
+      };
+
+      recognition.onerror = (e) => {
+        alert("Voice recognition failed: " + e.error);
+      };
+
+      recognition.start();
+    }
+  </script>
+</body>
+</html>
